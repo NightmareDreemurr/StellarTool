@@ -1,0 +1,2 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {rankAsset} from '../web/model.mjs';
+test('all game Rank enum names map to optional asset URLs',()=>{for(const rank of ['D','C','B','BB','BBB','A','AA','AAA','S','SP','SS','SSP','SSS','SSSP']){const path=rankAsset('Rank_'+rank);assert.ok(path);assert.match(path,/^\/assets\/UI_GAM_Rank_\w+\.png$/);}assert.equal(rankAsset('Rank_SSSP'),'/assets/UI_GAM_Rank_SSSp.png');assert.equal(rankAsset('SSS+'),rankAsset('Rank_SSSP'));assert.equal(rankAsset(null),null);assert.equal(rankAsset('Unknown'),null);});

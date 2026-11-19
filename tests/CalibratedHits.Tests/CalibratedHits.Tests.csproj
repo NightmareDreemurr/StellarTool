@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+<PropertyGroup><MelonLoaderDir Condition="'$(MelonLoaderDir)' == ''">$(MELON_DIR)</MelonLoaderDir><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>disable</Nullable></PropertyGroup>
+<ItemGroup>
+<Compile Include="../../src/StellarTool.Mod/CalibratedHitBuffer.cs" Link="CalibratedHitBuffer.cs"/>
+<Compile Include="../../src/StellarTool.Mod/CalibratedHitReader.cs" Link="CalibratedHitReader.cs"/>
+<Compile Include="../../src/StellarTool.Mod/CalibratedHitTelemetry.cs" Link="CalibratedHitTelemetry.cs"/>
+<Compile Include="../../src/StellarTool.Mod/Json.cs" Link="Json.cs"/>
+<Reference Include="0Harmony"><HintPath>$(MelonLoaderDir)/0Harmony.dll</HintPath></Reference>
+</ItemGroup><Target Name="CheckHarmony" BeforeTargets="PrepareForBuild">
+  <Error Condition="!Exists('$(MelonLoaderDir)/0Harmony.dll')" Text="Set MELON_DIR (or -p:MelonLoaderDir) to the installed loader containing 0Harmony.dll."/>
+</Target>
+</Project>

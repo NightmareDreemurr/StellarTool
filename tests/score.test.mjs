@@ -1,0 +1,10 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {buildScore,durationValue,tickAt} from '../web/score.mjs';
+const chart=(events)=>({resolution:384,duration:2,bpms:[{time:0,bpm:120}],meters:[{time:0,numerator:4,denominator:4}],events});
+test('duration rational tuplets',()=>{assert.deepEqual(durationValue(32),{den:8,dots:0,actual:3,normal:2});assert.equal(durationValue(72).dots,1);});
+test('one simultaneous head, combined colors',()=>{const s=buildScore(chart([{tick:0},{tick:0,break:true}]));assert.equal(s.items[0].each,true);assert.equal(s.items[0].break,true);});
+test('rest fills empty beat and beams stay within beats',()=>{const s=buildScore(chart([{tick:0},{tick:48},{tick:96},{tick:144}]));assert.equal(s.beams.length,2);assert.equal(s.beams[0].length,2);assert.ok(s.items.some(i=>i.rest));});
+test('tuplets grouped within beat',()=>{const s=buildScore(chart([{tick:0},{tick:32},{tick:64}]));assert.equal(s.tuplets[0].items.length,3);assert.equal(s.tuplets[0].actual,3);});
+test('BPM integration and meter boundaries',()=>{const c=chart([]);c.bpms.push({time:1,bpm:60});assert.equal(tickAt(c,2),288);c.meters.push({time:1,numerator:3,denominator:4});const s=buildScore(c);assert.equal(s.bars[0].end,192);assert.equal(s.bars[1].numerator,3);});
+import {timeAtTick} from '../web/score.mjs';
+test('explicit BPM tick anchors preserve offsets',()=>{const c=chart([]);c.bpms=[{time:0,tick:384,bpm:120},{time:1,tick:576,bpm:60}];assert.equal(tickAt(c,.5),480);assert.equal(timeAtTick(c,480),.5);assert.equal(timeAtTick(c,672),2);});
+test('game bar numbering takes precedence',()=>{const c=chart([]);c.bars=[{time:0,number:9},{time:1,number:10}];assert.equal(buildScore(c).bars[0].number,9);assert.equal(buildScore(c).bars[1].tick,192);});

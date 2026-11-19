@@ -1,0 +1,21 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {config,color,clock,beat} from '../web/model.mjs';
+test('RGBA and rejection',()=>{assert.equal(color('#00000080'),'#00000080');assert.throws(()=>color('bad'));});
+test('URL precedence does not mutate saved',()=>{const s={width:900};assert.equal(config('taiko',s,'width=1200').width,1200);assert.equal(s.width,900);});
+test('corner explicit order and disabled',()=>{const c=config('corner',{order:['pos','time','bpm','metronome']},'bpm=true&time=false&metronome=bar');assert.deepEqual(c.order,['bpm','metronome','pos']);});
+test('color override',()=>{assert.equal(config('corner',{},'textcolor=FFFFFF').uniform,true);assert.equal(config('corner').uniform,false);});
+test('reject invalid parameters',()=>{assert.throws(()=>config('taiko',{},'width=-1'));assert.throws(()=>config('corner',{},'metronome=bad'));});
+test('clock interpolation bounded and pause',()=>{assert.equal(clock({time:10,state:'playing'},0,500),10.5);assert.equal(clock({time:10,state:'playing',paused:true},0,500),10);assert.equal(clock({time:10,state:'playing'},0,9000),11);});
+test('BPM integrated across change',()=>{const b=beat({bpms:[{time:0,bpm:120},{time:2,bpm:60}],meters:[]},3);assert.equal(b.beats,5);assert.equal(b.bpm,60);});
+import {noteValue,musicalPosition} from '../web/model.mjs';
+test('note values and dots',()=>{assert.deepEqual(noteValue(1),{denominator:4,dots:0,tuplet:null});assert.equal(noteValue(.75).dots,1);assert.equal(noteValue(1/3).tuplet,3);});
+test('meter change starts a new measure',()=>{const c={bpms:[{time:0,bpm:120}],meters:[{time:0,numerator:4,denominator:4},{time:2,numerator:3,denominator:4}]};assert.equal(musicalPosition(c,2).bar,2);assert.equal(musicalPosition(c,3).beat,3);assert.equal(musicalPosition(c,3.5).bar,3);});
+import {splashRoles,flashAmount} from '../web/model.mjs';
+test('touch splash inclusive cap and solo',()=>{const e=[{tick:0,time:0,type:'Tap'},{tick:1,time:.1,type:'TouchTap'},{tick:2,time:.2,type:'TouchTap'},{tick:3,time:.301,type:'TouchTap'}];const r=splashRoles(e);assert.equal(r.get(0),1);assert.equal(r.get(1),2);assert.equal(r.get(2),2);assert.equal(r.get(3),0);});
+test('sweep tail cannot start splash unless end',()=>{const e=[{tick:0,time:0,type:'Tap'},{tick:1,time:.05,type:'TouchTap'}];assert.equal(splashRoles(e,[{tick:0,role:'tail',isEnd:false}]).get(0),0);assert.equal(splashRoles(e,[{tick:0,role:'tail',isEnd:true}]).get(0),1);});
+test('source flash duration boundary',()=>{assert.equal(flashAmount(-1),0);assert.equal(flashAmount(0),1);assert.equal(flashAmount(1.4),0);});
+import {rhythmSlots} from '../web/model.mjs';
+test('same slot one rhythm head with combined attributes',()=>{const slots=rhythmSlots([{tick:0,time:0,lane:0,type:'Tap'},{tick:0,time:0,lane:1,type:'Break',break:true},{tick:1,time:.1,lane:2,type:'Tap'}]);assert.equal(slots.length,2);assert.equal(slots[0].each,true);assert.equal(slots[0].break,true);});
+test('slide body duplicate lane is not a chord; connected excluded',()=>{const x=rhythmSlots([{tick:0,time:0,lane:1,type:'Star',each:true},{tick:0,time:0,lane:1,type:'Slide',each:true},{tick:12,time:.1,lane:2,type:'ConnectSlide',connected:true}]);assert.equal(x.length,1);assert.equal(x[0].each,false);});
+test('game grid anchors retain actual offset and meter marks',()=>{const c={resolution:384,bpms:[{time:.06,tick:0,bpm:120}],meters:[{time:.06,numerator:3,denominator:4}],bars:[{time:.06,bar:1},{time:1.56,bar:2}],beats:[{time:.06,beat:1},{time:.56,beat:2},{time:1.06,beat:3},{time:1.56,beat:1}]};assert.equal(beat(c,.06).beats,0);assert.equal(musicalPosition(c,1.56).bar,2);});
+
+test('taiko timing default, saved and URL',()=>{assert.equal(config('taiko').showTiming,false);assert.equal(config('taiko',{showTiming:true}).showTiming,true);assert.equal(config('taiko',{showTiming:true},'showTiming=false').showTiming,false);assert.throws(()=>config('taiko',{},'showTiming=1'));});

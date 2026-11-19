@@ -1,0 +1,25 @@
+name: CI
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Build host
+        run: sh build.sh --host-only
+      - name: Web tests
+        run: node --test tests/*.test.mjs
+      - name: .NET tests
+        run: |
+          set -eu
+          for suite in StellarTool NativeButtonLeds Settlement Judgement; do
+            dotnet run --project "tests/${suite}.Tests" -c Release
+          done

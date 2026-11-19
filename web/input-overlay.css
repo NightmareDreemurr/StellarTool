@@ -1,0 +1,36 @@
+@font-face{font-family:MiSans;src:url('/assets/MiSans.ttf') format('truetype');font-display:swap}
+html,body{margin:0;background:transparent;overflow:hidden}
+#overlay{width:var(--size);height:var(--size);background:var(--background)}
+#overlay>svg{display:block;width:100%;height:100%}
+.sensor-tile{visibility:hidden;stroke-width:2.3}
+.sensor-tile.is-down{visibility:visible;fill:var(--light);fill-opacity:1;stroke:#fff;stroke-opacity:.88}
+.no-sensor-outline .sensor-tile,.no-sensor-outline .sensor-tile.is-down{stroke:none}
+.sensor-id{visibility:hidden;font:600 39px MiSans,system-ui,sans-serif;text-anchor:middle;dominant-baseline:central;fill:#f1f7fb;pointer-events:none}
+.sensor-tile.is-down+.sensor-id{visibility:visible;fill:#0e2334}
+.cad-key-ring{position:relative;isolation:isolate}
+/* Apply a mathematical circle ONLY to the outside, in final source pixels.
+   The irregular CAD aperture is cut only out of the SVG white backing. */
+.cad-key-clip{position:absolute;inset:0;clip-path:circle(50% at 50% 50%)}
+/* Fit the native CAD outer stroke's actual bounds into the source square.
+   Art (backing, vector lines and exact LED masks) shares one transform.
+   CAD geometry after normalizing the aperture was 822.027×827.922, so
+   enclosing it in a square requires a small, deliberate axis correction. */
+.cad-key-art{position:absolute;inset:0;transform-origin:0 0;transform:translate(-4.7378005832%,-4.4310924124%) scale(1.0948545486,1.0870585976)}
+.cad-key-back,.cad-key-lines,.cad-key-light{position:absolute;inset:0;display:block;width:100%;height:100%;pointer-events:none}
+.cad-key-light{background:var(--light);opacity:0;mask:var(--key-mask) center/100% 100% no-repeat;mask-mode:alpha;-webkit-mask:var(--key-mask) center/100% 100% no-repeat}
+.cad-key-light.is-down{opacity:var(--light-opacity)}
+
+/* Only the moving CAD key shell is tinted. Nothing changes fixed surfaces or
+   aperture. Compact per-key alpha masks avoid full-source compositing per key. */
+.cad-led-cap,.cad-led-cap::before,.cad-led-cap.is-down::after{position:absolute;display:block;pointer-events:none}
+.cad-led-cap::before,.cad-led-cap.is-down::after{content:'';inset:0;mask-size:100% 100%;mask-repeat:no-repeat;mask-mode:alpha;-webkit-mask-size:100% 100%;-webkit-mask-repeat:no-repeat}
+.cad-led-cap::before{background:var(--key-color,transparent);mask-image:var(--key-mask);-webkit-mask-image:var(--key-mask)}
+.cad-led-cap.is-down::after{background:#1f2228;mask-image:var(--key-rim);-webkit-mask-image:var(--key-rim)}
+
+
+/* Source-only fallback; the centre opening and outer corners are transparent. */
+.schematic-key-frame{fill:none;stroke:#f0f2f8;stroke-width:120}
+.schematic-key{fill:#f8f8fa;stroke:#293142;stroke-width:6}
+.schematic-led{fill:var(--key-color,#f8f8fa)}
+.schematic-led.is-down,.schematic-legacy.is-down{stroke:#172033;stroke-width:12}
+.schematic-legacy.is-down{fill:var(--light);fill-opacity:var(--light-opacity)}

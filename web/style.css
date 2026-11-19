@@ -1,0 +1,179 @@
+@font-face{font-family:MiSans;src:url('/assets/MiSans.ttf') format('truetype');font-weight:400;font-style:normal;font-display:block}@font-face{font-family:MiSans;src:url('/assets/MiSans-Bold.ttf') format('truetype');font-weight:700;font-style:normal;font-display:block}@font-face{font-family:MiSans;src:url('/assets/MiSans-Heavy.ttf') format('truetype');font-weight:800 900;font-style:normal;font-display:block}@font-face{font-family:minimoon;src:url('/assets/minimoon.ttf')}*{box-sizing:border-box}body{margin:0;background:transparent;font-family:MiSans,system-ui;color:#172033}canvas{display:block}.admin{max-width:1100px;margin:32px auto;padding:24px;background:#eef2f8}.admin h1{font-size:28px}.admin button,.admin select{padding:10px;margin:8px;border:1px solid #b9c4d8;border-radius:8px}.admin textarea{width:100%;height:260px;font:14px monospace;padding:12px}.preview{background:repeating-conic-gradient(#ddd 0% 25%,#fff 0% 50%) 0/20px 20px;overflow:auto;min-height:240px}iframe{border:0;width:100%;height:300px}.status{font:12px MiSans, sans-serif;color:#875e00}.song{display:flex;gap:16px;padding:16px;font-family:MiSans,system-ui}.song img{width:100px;height:100px;object-fit:cover}.corner{position:fixed;font:24px minimoon,monospace;padding:12px}.error{padding:16px;color:#a00}
+.cover{position:relative;width:110px;height:110px;flex-shrink:0;background:#ddd;display:grid;place-items:center;font-size:12px}.cover .typebadge{position:absolute;top:0;left:0;width:52px;height:auto}.songmeta{min-width:0;flex:1}.songmeta>div{overflow-wrap:anywhere;margin-bottom:8px}.songmeta>div:first-child{font-size:20px;font-weight:bold}.scores{flex:1;min-width:0}.scoretop{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:18px;min-height:60%}.achievement{font-size:36px;font-weight:800}
+
+button,input,select,textarea{font-family:MiSans,sans-serif}.song{font-synthesis:none}.corner{font-family:minimoon,monospace}
+
+@font-face{font-family:MiSans;src:url('/assets/MiSans-Medium.ttf') format('truetype');font-weight:500;font-style:normal;font-display:block}
+#app:not(.admin)>.status{position:absolute;top:0;right:4px;z-index:4;pointer-events:none;font-size:11px}
+.song{position:absolute;left:0;padding:0 12px;gap:16px;align-items:stretch;font-weight:500;overflow:hidden}
+.song .cover{width:var(--panel-height);height:var(--panel-height)}
+.cover .typebadge{top:4px;left:4px;width:48px;height:auto}
+.songmeta{display:flex;flex-direction:column;justify-content:space-between;padding:2px 0;min-width:0;flex:1}
+.songmeta>div{margin:0;line-height:1.15;font-weight:500}
+.songmeta>div:first-child{font-size:20px;font-weight:700}
+.scores{flex:0 1 auto;margin-left:auto;text-align:right;display:flex;flex-direction:column;justify-content:space-between;padding:2px 0;min-width:240px;font-weight:500}
+.scoretop{justify-content:flex-end;min-height:0;gap:6px;flex-wrap:nowrap}
+.achievement{font-weight:800}
+
+.songmeta>div:not(:first-child),.scores{font-weight:700}
+
+.song{padding:calc(var(--panel-height)*.05) 12px}
+.song .cover{width:calc(var(--panel-height)*.9);height:calc(var(--panel-height)*.9)}
+.song .rankbadge{height:calc(var(--panel-height)*.26);width:auto;max-width:none;object-fit:contain;vertical-align:middle}
+.song .dxstar{height:calc(var(--panel-height)*.14);width:auto;max-width:none;object-fit:contain;vertical-align:middle;margin-left:6px}
+
+.scoretop{position:relative;padding-right:calc(var(--panel-height)*1.13)}
+.scoretop>span:last-child{position:absolute;right:0;top:0;bottom:0;display:flex;align-items:stretch}
+.song .rankbadge{height:100%;width:auto;object-fit:contain}
+
+.scoretop{padding-right:calc(var(--panel-height)*.87)}
+.scoretop>.rankgroup{display:flex;flex-direction:column;align-items:center;justify-content:flex-start}
+.song .rankgroup .rankbadge{height:75%;width:auto;flex:0 0 75%}
+.rankgroup .singlerating{height:25%;flex:0 0 25%;font-size:10px;line-height:1;display:flex;align-items:center;justify-content:center;font-weight:700;white-space:nowrap}
+
+.dxline{font-size:22px;line-height:24px;white-space:nowrap}.song .dxline .dxstar{height:22px;width:auto;object-fit:contain;vertical-align:middle}
+
+.corner-metronome{display:flex;width:max-content;margin-inline-start:auto;gap:.32em;align-items:center;white-space:nowrap}.corner-beat{opacity:.27}.corner-beat.first{transform:scale(1.18)}.corner-beat.active{opacity:1}
+.corner:not([style*="text-align"]) .corner-metronome{margin-inline-start:0}
+
+.corner-metronome[data-shape='point']{gap:.32em}.corner-metronome[data-shape='bar']{gap:.12em}.corner-metronome[data-shape='square']{gap:.22em}
+
+/* /rhythm song information only. */
+.song .song-jacket{width:100%;height:100%;object-fit:cover}
+.song-status{display:grid;width:100%;place-items:center;font-size:clamp(15px,calc(var(--panel-height)*.24),28px);font-weight:700}
+.song-level-item{display:inline-block;margin-right:10px}
+.song .song-title,.song .song-artist{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.song .score-better{color:#c51b38}
+.song .score-worse{color:#1b62ce}
+.song .song-flag-stack{height:100%;width:calc(var(--panel-height)*.43);flex:0 0 calc(var(--panel-height)*.43);display:grid;grid-template-rows:minmax(0,1fr) minmax(0,1fr);gap:4px;align-items:center;justify-items:center;margin-left:-5px}
+.song .song-flag{display:block;width:100%;height:100%;min-height:0;object-fit:contain}
+.song .badge-fallback{font-size:12px;min-height:1em;color:inherit}
+.song .song-level{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Compact category-only distribution layout. */
+.song-category{gap:10px;container-type:inline-size}
+.category-cover{display:grid;place-items:center;flex:0 0 clamp(76px,17%,140px);text-align:center;min-width:0}
+.song .category-cover-asset{width:100%;height:100%;min-height:0;object-fit:contain}
+.category-label{font-size:clamp(15px,calc(var(--panel-height)*.22),28px)}
+.category-summary{flex:1;min-width:0;display:grid;grid-template-rows:minmax(0,1.15fr) repeat(4,minmax(0,1fr));gap:1px}
+.category-averages{display:flex;gap:18px;align-items:center;font-size:clamp(8px,calc(var(--panel-height)*.114),14px);white-space:nowrap;overflow:hidden}
+.category-average{display:flex;align-items:baseline;gap:5px;min-width:0}
+.category-average strong{font-size:clamp(11px,calc(var(--panel-height)*.163),20px);font-variant-numeric:tabular-nums}
+.category-distribution{min-width:0;display:grid;grid-template-columns:87px minmax(75px,1fr) minmax(0,1.6fr);column-gap:6px;align-items:center;padding:0 3px;font-size:clamp(7px,calc(var(--panel-height)*.098),14px);border-radius:4px}
+.category-distribution[data-active=true]{background:#edf3fa}
+.distribution-label{display:flex;gap:4px;align-items:baseline;white-space:nowrap;font-weight:700;line-height:1}
+.distribution-clear{color:#244771;font-variant-numeric:tabular-nums}
+.distribution-track{min-width:0;display:flex;width:100%;height:68%;min-height:6px;background:#e6ecee;border-radius:3px;overflow:hidden}
+.distribution-segment{display:grid;position:relative;min-width:0;place-items:center;flex-shrink:0;background:var(--seg-color);color:#111d27;font-size:.91em;line-height:1}
+.distribution-number{position:absolute;white-space:nowrap;text-align:center;font-variant-numeric:tabular-nums}
+.distribution-number-outside{visibility:hidden}
+.distribution-legend{display:flex;gap:0 4px;align-items:center;flex-wrap:wrap;line-height:1;min-width:0}
+.distribution-tag{display:inline-flex;align-items:baseline;white-space:nowrap;gap:1px}
+.distribution-tag::before{content:'';display:inline-block;width:.55em;height:.55em;flex:none;border-radius:1px;background:var(--seg-color);margin-right:1px}
+.distribution-tag-count{font-variant-numeric:tabular-nums}
+.distribution-unavailable{height:35%}
+@container (max-width:550px){
+ .category-distribution{grid-template-columns:70px minmax(49px,1fr) minmax(0,1.55fr);column-gap:4px;font-size:clamp(7px,calc(var(--panel-height)*.09),11px)}
+ .distribution-legend{gap:2px}
+ .category-cover{flex-basis:clamp(55px,16%,96px)}
+ .category-averages{gap:9px}
+}
+@container (max-width:395px){
+ .category-distribution{grid-template-columns:62px minmax(38px,.9fr) minmax(0,2fr);column-gap:3px}
+ .category-cover{flex-basis:51px}
+ .distribution-tag::before{width:.40em;margin-right:0}
+}
+.category-metrics{flex:1;min-width:0;display:grid;grid-template-columns:1.1fr 1fr 1fr;grid-template-rows:repeat(2,minmax(0,1fr));gap:2px 7px;align-items:stretch}
+.category-stat{min-width:0;display:grid;grid-template-rows:min-content minmax(0,1fr);align-content:start;text-align:center;padding:1px 3px;border-radius:4px;background:#6583aa15;font-size:clamp(7px,calc(var(--panel-height)*.101),15px)}
+.category-stat[data-active=true]{background:#3273c92c}
+.category-stat-title{font-weight:700;line-height:1.05}
+.category-big-value{align-self:center;font-size:clamp(12px,calc(var(--panel-height)*.2),27px)}
+.category-tiers{display:flex;justify-content:space-evenly;min-width:0;gap:2px}
+.category-tier{display:grid;min-width:0;max-width:22%;grid-template-rows:minmax(0,1fr) min-content;justify-items:center;align-items:center;flex:1 1 auto;line-height:1}
+.category-tier .category-value{white-space:nowrap;font-size:.94em}
+.song .category-tier-icon{width:100%;height:100%;max-height:calc(var(--panel-height)*.19);object-fit:contain;min-height:0}
+
+/* Optional exact badge and combined previews. Numeric text is nested inside
+   its official badge compartment at SDEZ's anchored y=-7 source units. */
+.category-native-summary{flex:1;min-width:0;display:grid;grid-template-rows:minmax(17px,.8fr) minmax(0,3.2fr);gap:2px}
+.category-native-grid{display:grid;grid-template-columns:1.08fr 1fr;grid-template-rows:repeat(2,minmax(0,1fr));gap:2px 6px;min-width:0}
+.category-native-group{display:grid;grid-template-rows:min-content minmax(0,1fr);min-width:0;border-radius:4px;background:#6583aa14;padding:0 3px;line-height:1}
+.category-native-group[data-active=true]{background:#3273c92c}
+.category-native-title{display:flex;gap:6px;align-items:baseline;font-size:clamp(7px,calc(var(--panel-height)*.095),14px);font-weight:700;white-space:nowrap}
+.category-native-tiers{display:flex;align-items:center;justify-content:flex-start;gap:4px;min-width:0}
+.category-native-badge{display:block;position:relative;flex:0 1 calc(var(--panel-height)*.286);height:auto;aspect-ratio:52/48;min-width:0;margin:auto 0}
+.category-native-group[data-metric=dx] .category-native-badge{aspect-ratio:48/41}
+.song .category-native-group[data-metric=dx] .category-native-badge .category-tier-icon{object-fit:fill}
+.song .category-native-badge .category-tier-icon{position:absolute;inset:0;display:block;width:100%;height:100%;max-height:none;object-fit:contain}
+.category-native-count{position:absolute;left:0;right:0;top:64.58333%;transform:translateY(-50%);text-align:center;font:700 clamp(6px,calc(var(--panel-height)*.086),12px)/1 MiSans,system-ui;color:#142232;font-variant-numeric:tabular-nums;white-space:nowrap}
+.category-native-group[data-metric=dx] .category-native-count{top:67.07317%}
+.song .distribution-native-icon{height:clamp(8px,calc(var(--panel-height)*.12),16px);width:auto;object-fit:contain}
+.song[data-category-style=hybrid] .distribution-tag:has(.distribution-native-icon)::before{display:none}
+.song[data-category-style=hybrid] .distribution-legend{gap:0 3px}
+@container (max-width:550px){
+ .category-native-tiers{gap:1px;justify-content:space-between}
+ .category-native-count{font-size:clamp(5.5px,calc(var(--panel-height)*.075),9px)}
+ .song[data-category-style=hybrid] .distribution-native-icon{height:clamp(7px,calc(var(--panel-height)*.072),11px)}
+}
+
+.distribution-label-compact{display:none}
+@container(max-width:550px){
+ .category-distribution{grid-template-columns:62px minmax(45px,1fr) minmax(0,2.15fr);font-size:clamp(7px,calc(var(--panel-height)*.075),10px)}
+ .distribution-legend{column-gap:2px;row-gap:0}
+ .category-distribution[data-metric=clearRank] .distribution-label-name{display:none}
+ .distribution-label-compact{display:inline}
+}
+
+.category-native-title{align-items:center;min-width:0}
+.category-native-title .category-title-text{flex:none}
+.category-native-strip{display:flex;align-items:stretch;flex:1;min-width:0;height:clamp(5px,calc(var(--panel-height)*.085),13px);border-radius:2px;background:#e6ecee;overflow:hidden}
+.category-native-strip-segment{position:relative;flex:none;min-width:0;display:grid;place-items:center;line-height:1}
+.category-native-strip-label{position:absolute;white-space:nowrap;font-size:clamp(5px,calc(var(--panel-height)*.07),10px);line-height:1;color:#152031;font-weight:800}
+
+.song .category-average-badge{width:auto;height:clamp(8px,calc(var(--panel-height)*.14),20px);object-fit:contain;align-self:center;flex:none}
+
+/* Overflow-only title marquee; title and artist measure independently; score remains fixed. */
+.song-title-track{display:inline-block;white-space:nowrap;vertical-align:top}
+.song-title-copy{display:none;padding-left:32px}
+.song .title-scrolling{text-overflow:clip}
+.title-scrolling .song-title-copy{display:inline}
+@media(prefers-reduced-motion:reduce){.song-title-track{transform:none!important}.song-title-copy{display:none!important}}
+
+/* Result only: distribution replaces song metadata, and the right grades keep official art. */
+.song .result-achievement{color:#000}
+.song-with-judgement{gap:14px;color:#000;container-type:inline-size}
+.song-with-judgement .result-grades{flex:0 0 auto;width:max-content;max-width:100%;min-width:0;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);gap:1px}
+.result-grades .result-track{font-size:clamp(10px,calc(var(--panel-height)*.145),20px);line-height:1.2;font-weight:800;white-space:nowrap}
+.result-grade-details{display:flex;align-items:stretch;gap:7px;min-height:0;min-width:0}
+.song-with-judgement .scores{flex:1;min-width:0;font-weight:800}
+.result-score-area{font-variant-numeric:tabular-nums}
+.song-with-judgement .achievement{font-size:clamp(15px,calc(var(--panel-height)*.30),36px);font-weight:900}
+.song-with-judgement .scoretop{padding-right:0;align-items:stretch;justify-content:flex-end}
+.song-with-judgement .scoretop>.rankgroup{position:static;width:calc(var(--panel-height)*.65)}
+.result-score-area{display:grid;grid-template-columns:minmax(0,1fr);min-width:0}
+.result-score-area>.scores,.result-score-measure{grid-row:1;grid-column:1}
+.result-score-measure{visibility:hidden;pointer-events:none;display:flex;flex-direction:column;white-space:nowrap;font-weight:800}
+.result-measure-top{display:flex;align-items:center;gap:6px}
+.result-measure-rank{display:flex;flex-direction:column;align-items:center;width:calc(var(--panel-height)*.65)}
+.song .result-measure-rank .rankbadge{width:auto;max-width:100%;height:calc(var(--panel-height)*.20)}
+.result-measure-rank .singlerating{font-size:10px;font-weight:700}
+.song-with-judgement .rankgroup .rankbadge{max-width:calc(var(--panel-height)*.65)}
+.song-with-judgement .dxline{display:flex;align-items:center;justify-content:flex-end;gap:4px;font-size:clamp(10px,calc(var(--panel-height)*.175),22px);min-width:0}
+.song-with-judgement .dxline .dxstar{flex:none;width:auto;height:clamp(12px,calc(var(--panel-height)*.174),22px);margin-left:4px}
+.song-with-judgement .song-flag-stack{margin-left:0}
+.result-judgement{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);gap:2px;align-items:stretch;height:100%;min-width:0;flex:1 1 auto;padding:2px 13px 0 4px;border-right:1px solid #aab4c2}
+.result-judgement-summary{display:flex;gap:10px;align-items:baseline;white-space:nowrap;color:#000;font-weight:800;font-variant-numeric:tabular-nums;font-size:clamp(8px,calc(var(--panel-height)*.13),18px);line-height:1.1}
+.result-judgement-summary strong{font-size:1.10em}
+.result-judgement-figure{display:grid;grid-template-rows:minmax(0,1fr) auto;flex:1;min-width:0;min-height:0;padding:4px 0 0}
+.result-judgement-figure svg{width:100%;height:100%;overflow:hidden;border-bottom:1px solid #7c8696}
+.result-judgement-axis{display:flex;justify-content:space-between;color:#283544;font-size:clamp(7px,calc(var(--panel-height)*.10),14px);font-weight:800}
+
+.result-judgement-empty{align-self:center;min-width:0;color:#627085;font-size:clamp(8px,calc(var(--panel-height)*.12),16px);font-weight:700}
+
+/* App badge artwork is a wide icon; keep counts in its lower slot, not over the stars. */
+.song .category-native-group[data-metric=dx] .category-native-badge .category-tier-icon{height:62%;object-fit:contain}
+.category-native-group[data-metric=dx] .category-native-count{top:73%}
+
+/* Result layout B: statistics stay inside the histogram pane's top-right. */
+.result-judgement-summary{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px}
+.result-judgement-summary strong{grid-column:1;grid-row:1/3}
+.result-judgement-summary span{grid-column:2;text-align:right}
