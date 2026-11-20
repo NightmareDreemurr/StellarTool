@@ -15,6 +15,13 @@ jobs:
           dotnet-version: '8.0.x'
       - name: Build host
         run: sh build.sh --host-only
+      - name: Verify portable Host web files
+        run: |
+          set -eu
+          for source in web/*.html web/*.css web/*.mjs; do
+            cmp "$source" "dist/host/$source"
+          done
+          test ! -e dist/host/web/assets
       - name: Web tests
         run: node --test tests/*.test.mjs
       - name: .NET tests

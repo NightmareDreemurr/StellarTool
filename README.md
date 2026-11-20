@@ -12,6 +12,14 @@ Independent community project. Not affiliated with or endorsed by SEGA.
 dotnet run --project src/StellarTool.Host
 ```
 
+只构建并运行可移动的 Host（包含网页文件，仍需本机安装 ASP.NET Core 8 Runtime）：
+
+```sh
+sh build.sh --host-only
+cd dist/host
+dotnet StellarTool.Host.dll
+```
+
 首次启动会生成 `config.json` 和 `bridge-token.txt`。管理界面在 [7856](http://127.0.0.1:7856/)，显示端在 7857。管理写入和 Mod 数据接入只接受本机请求；显示接口不要求登录，会暴露当前输入、曲目、谱面和判定。默认绑定回环地址。OBS 在另一台机器上时，仅对可信局域网开放显示端，不要把端口转发到互联网，也不要公开 bridge token。
 
 把对应 URL 填入 OBS 浏览器源：
@@ -48,7 +56,7 @@ player=0
 
 ## 公开版本包含什么
 
-本仓库只发布项目自身源码。没有游戏、固件、第三方二进制、封面、字体、游戏贴图、基于官方 CAD 的按键图或私有部署配置。未提供素材时，叠加层使用文字和原创示意图；触摸区示意图不等同于官机的精确几何。你可以在本地配置有权使用的可选图像，不要将这些资源提交到仓库。
+本仓库只发布项目自身源码。没有游戏、固件、第三方二进制、封面、字体、游戏贴图、基于官方 CAD 的按键图或私有部署配置。未提供素材时，叠加层使用文字和原创示意图；触摸区示意图不等同于官机的精确几何。你可以按[本地素材配置](docs/local-assets.md)接入有权使用的可选资源。
 
 ## 测试
 
