@@ -5,8 +5,11 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <!-- Publish the overlay application, not the optional local artwork directory. -->
     <Content Include="../../web/*.html;../../web/*.css;../../web/*.mjs"
              Link="web/%(Filename)%(Extension)" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="../../web/assets/**/*.png;../../web/assets/**/*.svg;../../web/assets/**/*.ttf"
+             Link="web/assets/%(RecursiveDir)%(Filename)%(Extension)" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="../../web/assets/sensor-layout.json;../../web/assets/MiSans-LICENSE.txt"
+             Link="web/assets/%(Filename)%(Extension)" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

@@ -13,15 +13,19 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
-      - name: Build host
-        run: sh build.sh --host-only
-      - name: Verify portable Host web files
+      - name: Build Host and Mod
+        run: sh build.sh
+      - name: Verify built files
         run: |
           set -eu
           for source in web/*.html web/*.css web/*.mjs; do
             cmp "$source" "dist/host/$source"
           done
-          test ! -e dist/host/web/assets
+          git ls-files -z web/assets | xargs -0 -I '{}' cmp '{}' 'dist/host/{}'
+          test ! -e dist/host/bridge-token.txt
+          test ! -e dist/host/config.json
+          test ! -e dist/host/resource-path.txt
+          test -f dist/mod/StellarTool.Mod.dll
       - name: Web tests
         run: node --test tests/*.test.mjs
       - name: .NET tests

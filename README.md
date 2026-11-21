@@ -1,50 +1,50 @@
 # StellarTool
 
-用于舞萌 DX 的 OBS 浏览器叠加层与本地遥测工具。由 .NET 8 Host、MelonLoader 游戏适配器和原生 Web 前端组成。适配器读取输入、曲目与判定等游戏状态，不写入成绩或账号，不向控制器发送指令。
+用于舞萌 DX 的 OBS 浏览器叠加层与本地遥测工具。Windows 游戏侧由 MelonLoader Mod 采集输入、曲目、谱面和判定等状态，.NET 8 Host 将数据提供给 OBS 浏览器源。Mod 不修改成绩或账号数据，也不向控制器发送指令。
 
 Independent community project. Not affiliated with or endorsed by SEGA.
 
-## 启动 Host
+## 下载与启动
 
-安装 .NET 8 SDK，从仓库根目录执行：
+从 [GitHub Releases](https://github.com/NightmareDreemurr/StellarTool/releases/latest) 下载所需文件。
 
-```sh
-dotnet run --project src/StellarTool.Host
+| 文件 | 用途 |
+| --- | --- |
+| `StellarTool.Web-win-x64.zip` | Windows x64 一键运行包，含 Host、ASP.NET Core 8 运行时、网页及仓库随附素材。 |
+| `StellarTool.Mod.dll` | 游戏端适配器，需配合本机已安装的兼容游戏和 MelonLoader。 |
+
+1. 将 Web ZIP 完整解压到有写权限的目录，双击 `Start-StellarTool.cmd`，保持窗口开启。
+2. 打开 [本机管理页](http://127.0.0.1:7856/)。首次启动会在解压目录生成 `config.json` 和 `bridge-token.txt`。
+3. 可以先打开 [判定演示](http://127.0.0.1:7857/judgement?preview=true)。只预览网页时无需安装 Mod 或配置游戏。
+
+macOS 或 Linux 可以使用下文的源码构建方式启动 Host。
+
+## 游戏与加载器版本
+
+| 游戏版本 | 加载器与验证范围 |
+| --- | --- |
+| **SDEZ 1.70** | 构建使用 MelonLoader **0.6.4 Open-Beta** 的 Mono/net35 版和对应 Harmony。该游戏程序集已有 Mod 加载、连接及空闲输入遥测记录。 |
+| **SDGB**（具体发行版本号未确认） | 代码识别下表中的程序集并支持其反射接口，尚无实机运行验证。 |
+
+Mod 启动时检查 `Sinmai_Data/Managed/Assembly-CSharp.dll` 的 SHA-256，只接入下列两个版本。请以哈希为准。
+
+| 游戏 | SHA-256 |
+| --- | --- |
+| SDEZ 1.70 | `dc0e46a4133d4ee4781ba6deb2fe30063dd3f82ee91c31a5a8a7e61e644d9446` |
+| SDGB | `c291f0febe70cc24a679683ef07c059c1f856c052e1f6be7a22b55c6b16a94eb` |
+
+在 PowerShell 中从游戏根目录核对：
+
+```powershell
+(Get-FileHash ".\Sinmai_Data\Managed\Assembly-CSharp.dll" -Algorithm SHA256).Hash.ToLowerInvariant()
 ```
 
-只构建并运行可移动的 Host（包含网页文件，仍需本机安装 ASP.NET Core 8 Runtime）：
+外键实时 RGB 还依赖兼容的 AquaMai/Maimoller 和手台链路。
 
-```sh
-sh build.sh --host-only
-cd dist/host
-dotnet StellarTool.Host.dll
-```
+## 安装与配置 Mod
 
-首次启动会生成 `config.json` 和 `bridge-token.txt`。管理界面在 [7856](http://127.0.0.1:7856/)，显示端在 7857。管理写入和 Mod 数据接入只接受本机请求；显示接口不要求登录，会暴露当前输入、曲目、谱面和判定。默认绑定回环地址。OBS 在另一台机器上时，仅对可信局域网开放显示端，不要把端口转发到互联网，也不要公开 bridge token。
-
-把对应 URL 填入 OBS 浏览器源：
-
-| 叠加层 | 示例 | 浏览器源大小 |
-| --- | --- | --- |
-| 节奏解析 | `/rhythm?mode=taiko&width=800&height=100` | 800 × 250，顶部 150 px 留给上飞特效 |
-| 乐谱模式 | `/rhythm?mode=score&width=800&height=100` | 800 × 100 |
-| 曲目信息与节拍器 | `/corner?bpm=true&time=true&pos=true&metronome=bar` | 随场景设置 |
-| 判定快慢 | `/judgement?preview=true` | 默认 800 × 90；正式使用去掉预览参数 |
-| 触摸感应器 | `/sensor?size=720&light=51E9FFF5&outline=false&player=1` | 720 × 720 |
-| 外键与灯光 | `/keys?size=720&lightOpacity=1&frameOpacity=1&player=1` | 720 × 720 |
-
-`size` 是边长。颜色用 `RRGGBB` 或叠加层支持的 `RRGGBBAA`，不带 `#`。外键可在兼容手台上显示实时 RGB，按压单独压暗。若只想用固定颜色显示按键，设置 `ledMode=legacy&light=EC2127`。
-
-## 构建与接入游戏
-
-浏览器叠加层与 Host 无需游戏文件即可构建。完整游戏接入需要你自己的兼容 Windows 游戏安装、MelonLoader、Harmony 和对应 Mono/.NET Framework 引用。以下命令使用 POSIX shell（Windows 可用 Git Bash）：
-
-```sh
-sh build.sh --host-only
-GAME_MANAGED=/path/to/Sinmai_Data/Managed MELON_DIR=/path/to/loader/files sh build.sh
-```
-
-`MELON_DIR` 应包含匹配的 `MelonLoader.dll` 与 `0Harmony.dll`。只将 `dist/mod/StellarTool.Mod.dll` 放入游戏的 `Mods/`，不要复制 Host 或第三方 DLL。将游戏同机的 Host 启动后，在游戏目录创建 `UserData/StellarTool/bridge.cfg`：
+1. 在游戏所在的 Windows 电脑启动 Host。在游戏根目录的 `Mods/` 放入 `StellarTool.Mod.dll`。
+2. 在游戏根目录创建 `UserData/StellarTool/bridge.cfg`，将 `token` 替换为 Host 生成的 `bridge-token.txt` 中的整行内容。
 
 ```ini
 endpoint=http://127.0.0.1:7856/api/ingest
@@ -52,11 +52,63 @@ token=REPLACE_WITH_LOCAL_BRIDGE_TOKEN
 player=0
 ```
 
-这里 Mod 的 `player=0` 指 1P，网页的 `player=1` 指 1P。适配器会按 `Assembly-CSharp.dll` 的哈希校验受支持的游戏版本。不匹配时会停用，而不是盲目挂载。SDEZ 的指定版本已验证启动与遥测连接；SDGB 有适配代码，尚未验证实机。按键灯读取依赖兼容的 AquaMai/Maimoller 路径，并非所有手台都支持。
+3. 启动游戏。启动日志里的 `Missing ... bridge.cfg` 表示配置路径不对，`Unverified game assembly` 表示目标 DLL 的哈希不匹配。连接后可在 [状态接口](http://127.0.0.1:7857/api/state) 查看 `connected`。
 
-## 公开版本包含什么
+Mod 的 `player=0` 和 `player=1` 分别选择 1P、2P。触摸和外键叠加层 URL 的 `player=1` 和 `player=2` 分别显示 1P、2P。管理端口改变后，更新 `endpoint` 并重启游戏。
 
-本仓库只发布项目自身源码。没有游戏、固件、第三方二进制、封面、字体、游戏贴图、基于官方 CAD 的按键图或私有部署配置。未提供素材时，叠加层使用文字和原创示意图；触摸区示意图不等同于官机的精确几何。你可以按[本地素材配置](docs/local-assets.md)接入有权使用的可选资源。
+## 配置 OBS 和网络
+
+在 OBS 添加浏览器源。以下路径接在显示端地址 `http://127.0.0.1:7857` 后。
+
+| 叠加层 | 路径示例 | 浏览器源大小 |
+| --- | --- | --- |
+| 节奏解析 | `/rhythm?mode=taiko&width=800&height=100` | 800 × 250，上方 150 px 留给上飞特效 |
+| 乐谱模式 | `/rhythm?mode=score&width=800&height=100` | 800 × 100 |
+| 曲目信息与节拍器 | `/corner?bpm=true&time=true&pos=true&metronome=bar` | 随场景设置 |
+| 判定快慢 | `/judgement` | 默认 800 × 90 |
+| 触摸感应器 | `/sensor?size=720&light=51E9FFF5&outline=false&player=1` | 720 × 720 |
+| 外键与灯光 | `/keys?size=720&lightOpacity=1&frameOpacity=1&player=1` | 720 × 720 |
+
+`size` 是正方形边长。颜色用 `RRGGBB` 或对应选项支持的 `RRGGBBAA`，无需 `#`。外键可用 `ledMode=legacy&light=EC2127` 固定灯色。
+
+管理端口默认是 `7856`，显示端口默认是 `7857`，监听地址默认是 `127.0.0.1`。在管理界面的 `server` 配置中修改地址或端口后需重启 Host。OBS 在另一台电脑时，可将 `server.host` 改为 `0.0.0.0`，在防火墙中只向可信局域网放行显示端口，再用 Host 的局域网 IP 拼接 OBS 地址。Mod 的 `endpoint` 仍指本机回环地址。显示端公开当前输入、曲目、谱面和判定状态，勿转发到互联网或公开桥接 token。
+
+## 随附文件与本地配置
+
+| 已随仓库提供 | 需要本地准备 |
+| --- | --- |
+| `dependencies/sdez170-melon064/` 的 MelonLoader、Harmony、Mono 框架和游戏 firstpass 编译参考 | 实际运行的 Windows 游戏、匹配的 MelonLoader 安装及其运行时文件 |
+| `web/assets/` 的 SD/DX、Rank、判定、曲目信息图标和图片，触摸几何、外键图层、MiSans 和 minimoon 字体 | 可选的曲目封面 ZIP。通过 `STELLAR_ASSETS_ZIP` 或 `resource-path.txt` 指定 |
+| Host 源码和 OBS 网页 | 本机生成的 `config.json`、`bridge-token.txt`，以及按上文创建的 `bridge.cfg` |
+
+Web ZIP 随附网页素材。Mod 下载项仅包含项目的 `StellarTool.Mod.dll`，构建参考 DLL 由仓库单独提供。封面路径、目录结构及素材替换方法见 [本地素材配置](docs/local-assets.md)。
+
+## 从源码构建
+
+安装 [.NET 8 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)，在仓库根目录执行。Windows 可用 Git Bash。
+
+```sh
+sh build.sh               # 构建 Host 和 Mod
+sh build.sh --host-only   # 只构建 Host
+cd dist/host
+dotnet StellarTool.Host.dll
+```
+
+Host 和网页素材输出到 `dist/host/`，Mod 输出到 `dist/mod/StellarTool.Mod.dll`。完整构建默认用仓库内的参考文件，可用 `GAME_MANAGED` 指定本机的 `Sinmai_Data/Managed`，用 `MELON_DIR` 指定包含匹配 `MelonLoader.dll` 和 `0Harmony.dll` 的文件夹。切换构建参考不会改变运行时的游戏哈希检查。
+
+要重新打包 Windows x64 自包含 Web 版本，在仓库根目录运行以下命令。请使用一个空的输出目录。
+
+```sh
+dotnet publish src/StellarTool.Host -c Release -r win-x64 --self-contained true \
+  -p:RuntimeFrameworkVersion=8.0.34 --source https://api.nuget.org/v3/index.json \
+  -o dist/web-win-x64
+cp scripts/Start-StellarTool.cmd dist/web-win-x64/
+cp README.md LICENSE dist/web-win-x64/
+mkdir -p dist/web-win-x64/docs
+cp docs/local-assets.md dist/web-win-x64/docs/
+```
+
+发布时将 NuGet 运行时包随附的许可证及第三方声明一同放入 `licenses/`，再将整个输出目录压缩为 ZIP。
 
 ## 测试
 
@@ -65,11 +117,12 @@ node --test tests/*.test.mjs
 for suite in StellarTool NativeButtonLeds Settlement Judgement; do
   dotnet run --project "tests/${suite}.Tests" -c Release
 done
-MELON_DIR=/path/to/loader/files dotnet run --project tests/CalibratedHits.Tests -c Release
+MELON_DIR="$PWD/dependencies/sdez170-melon064" \
+  dotnet run --project tests/CalibratedHits.Tests -c Release
 ```
 
-最后一项需要本机 Harmony。可另设 `STELLAR_TEST_GAME_ASSEMBLY` 测试目标游戏程序集的元数据，无需运行游戏。CI 运行不依赖游戏或第三方资源的构建和测试。
+可另设 `STELLAR_TEST_GAME_ASSEMBLY` 指向本机 `Assembly-CSharp.dll`，以额外检查游戏程序集元数据。
 
-## License
+## 许可证
 
-[MIT](LICENSE) covers this project's source and documentation only. Third-party games, names, dependencies, and locally supplied artwork are not included in that grant.
+项目源码与文档采用 [MIT](LICENSE)。第三方构建参考和素材各自适用其许可。Web 界面使用 MiSans 字体，随附 [MiSans 许可](web/assets/MiSans-LICENSE.txt)。
