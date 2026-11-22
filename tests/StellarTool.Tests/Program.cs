@@ -18,3 +18,5 @@ Check(s.Chart("bench")!=null,"chart survives lightweight updates");Check(s.Get(f
 Check(!ConfigRules.Defaults()["taiko"]!["showTiming"]!.GetValue<bool>(),"timing default off");var timing=ConfigRules.Defaults();timing["taiko"]!["showTiming"]=true;Check(ConfigRules.Validate(timing)["taiko"]!["showTiming"]!.GetValue<bool>(),"timing saved");timing["taiko"]!["showTiming"]="true";Reject(()=>ConfigRules.Validate(timing),"timing type");
 
 StellarTool.Tests.InputTests.Run();
+
+StellarTool.Tests.GameCompatibilityTests.Run();

@@ -10,8 +10,8 @@ Independent community project. Not affiliated with or endorsed by SEGA.
 
 | 文件 | 用途 |
 | --- | --- |
-| `StellarTool.Web-win-x64.zip` | Windows x64 一键运行包，含 Host、ASP.NET Core 8 运行时、网页及仓库随附素材。 |
-| `StellarTool.Mod.dll` | 游戏端适配器，需配合本机已安装的兼容游戏和 MelonLoader。 |
+| `StellarTool.Web-win-x64.zip` | Windows x64 一键运行包，含 Host、ASP.NET Core 8 运行时、网页素材、曲目封面，以及 `mod/StellarTool.Mod.dll`。 |
+| `StellarTool.Mod.dll` | 同版游戏端适配器的单独下载，适合只更新 Mod。 |
 
 1. 将 Web ZIP 完整解压到有写权限的目录，双击 `Start-StellarTool.cmd`，保持窗口开启。
 2. 打开 [本机管理页](http://127.0.0.1:7856/)。首次启动会在解压目录生成 `config.json` 和 `bridge-token.txt`。
@@ -24,13 +24,15 @@ macOS 或 Linux 可以使用下文的源码构建方式启动 Host。
 | 游戏版本 | 加载器与验证范围 |
 | --- | --- |
 | **SDEZ 1.70** | 构建使用 MelonLoader **0.6.4 Open-Beta** 的 Mono/net35 版和对应 Harmony。该游戏程序集已有 Mod 加载、连接及空闲输入遥测记录。 |
-| **SDGB**（具体发行版本号未确认） | 代码识别下表中的程序集并支持其反射接口，尚无实机运行验证。 |
+| **SDEZ 1.71** | 对应覆盖包的主程序集已通过 Mod 加载、连接及空闲输入遥测验证。实机游玩仍有待验证。 |
+| **SDGB**（具体发行版本号未确认） | 适配其反射接口，尚无实机运行验证。 |
 
-Mod 启动时检查 `Sinmai_Data/Managed/Assembly-CSharp.dll` 的 SHA-256，只接入下列两个版本。请以哈希为准。
+Mod 启动时检查已加载的游戏程序集是否提供计时、谱面读取和核心流程接口。以下 SHA-256 用于识别已对照的程序集。
 
 | 游戏 | SHA-256 |
 | --- | --- |
 | SDEZ 1.70 | `dc0e46a4133d4ee4781ba6deb2fe30063dd3f82ee91c31a5a8a7e61e644d9446` |
+| SDEZ 1.71 | `cccf157459c6d81c8cd4ee0661338d0d554d502be2866e34ed39643b7aff2356` |
 | SDGB | `c291f0febe70cc24a679683ef07c059c1f856c052e1f6be7a22b55c6b16a94eb` |
 
 在 PowerShell 中从游戏根目录核对：
@@ -52,7 +54,7 @@ token=REPLACE_WITH_LOCAL_BRIDGE_TOKEN
 player=0
 ```
 
-3. 启动游戏。启动日志里的 `Missing ... bridge.cfg` 表示配置路径不对，`Unverified game assembly` 表示目标 DLL 的哈希不匹配。连接后可在 [状态接口](http://127.0.0.1:7857/api/state) 查看 `connected`。
+3. 启动游戏。日志里的 `Missing ... bridge.cfg` 表示找不到桥接配置，`Incompatible game API` 会列出缺失的游戏接口。连接后可在 [状态接口](http://127.0.0.1:7857/api/state) 查看 `connected`。
 
 Mod 的 `player=0` 和 `player=1` 分别选择 1P、2P。触摸和外键叠加层 URL 的 `player=1` 和 `player=2` 分别显示 1P、2P。管理端口改变后，更新 `endpoint` 并重启游戏。
 
@@ -78,10 +80,10 @@ Mod 的 `player=0` 和 `player=1` 分别选择 1P、2P。触摸和外键叠加�
 | 已随仓库提供 | 需要本地准备 |
 | --- | --- |
 | `dependencies/sdez170-melon064/` 的 MelonLoader、Harmony、Mono 框架和游戏 firstpass 编译参考 | 实际运行的 Windows 游戏、匹配的 MelonLoader 安装及其运行时文件 |
-| `web/assets/` 的 SD/DX、Rank、判定、曲目信息图标和图片，触摸几何、外键图层、MiSans 和 minimoon 字体 | 可选的曲目封面 ZIP。通过 `STELLAR_ASSETS_ZIP` 或 `resource-path.txt` 指定 |
+| `web/assets/` 的 SD/DX、Rank、判定、曲目信息图标和图片，触摸几何、外键图层、MiSans 和 minimoon 字体 | 源码运行时可选的曲目封面 ZIP。Windows 发布包已随附 `jackets.zip` |
 | Host 源码和 OBS 网页 | 本机生成的 `config.json`、`bridge-token.txt`，以及按上文创建的 `bridge.cfg` |
 
-Web ZIP 随附网页素材。Mod 下载项仅包含项目的 `StellarTool.Mod.dll`，构建参考 DLL 由仓库单独提供。封面路径、目录结构及素材替换方法见 [本地素材配置](docs/local-assets.md)。
+Windows Web ZIP 随附网页素材和曲目封面。封面路径、目录结构及素材替换方法见 [本地素材配置](docs/local-assets.md)。
 
 ## 从源码构建
 
@@ -94,21 +96,15 @@ cd dist/host
 dotnet StellarTool.Host.dll
 ```
 
-Host 和网页素材输出到 `dist/host/`，Mod 输出到 `dist/mod/StellarTool.Mod.dll`。完整构建默认用仓库内的参考文件，可用 `GAME_MANAGED` 指定本机的 `Sinmai_Data/Managed`，用 `MELON_DIR` 指定包含匹配 `MelonLoader.dll` 和 `0Harmony.dll` 的文件夹。切换构建参考不会改变运行时的游戏哈希检查。
+Host 和网页素材输出到 `dist/host/`，Mod 输出到 `dist/mod/StellarTool.Mod.dll`。完整构建默认用仓库内的参考文件，可用 `GAME_MANAGED` 指定本机的 `Sinmai_Data/Managed`，用 `MELON_DIR` 指定包含匹配 `MelonLoader.dll` 和 `0Harmony.dll` 的文件夹。
 
-要重新打包 Windows x64 自包含 Web 版本，在仓库根目录运行以下命令。请使用一个空的输出目录。
+要重新打包包含素材的 Windows x64 自包含版本，请安装 Python 3 并准备获授权的封面源 ZIP。在仓库根目录运行以下命令。
 
 ```sh
-dotnet publish src/StellarTool.Host -c Release -r win-x64 --self-contained true \
-  -p:RuntimeFrameworkVersion=8.0.34 --source https://api.nuget.org/v3/index.json \
-  -o dist/web-win-x64
-cp scripts/Start-StellarTool.cmd dist/web-win-x64/
-cp README.md LICENSE dist/web-win-x64/
-mkdir -p dist/web-win-x64/docs
-cp docs/local-assets.md dist/web-win-x64/docs/
+python3 scripts/package-windows.py /path/to/assets.zip dist/windows-release
 ```
 
-发布时将 NuGet 运行时包随附的许可证及第三方声明一同放入 `licenses/`，再将整个输出目录压缩为 ZIP。
+脚本提取 Host 可读取的封面 PNG，并将启动器、Web、Mod、运行时许可证和第三方声明一起打包。
 
 ## 测试
 

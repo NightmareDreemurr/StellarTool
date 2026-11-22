@@ -5,12 +5,11 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
-using System.Security.Cryptography;
 using System.Threading;
 
 using HarmonyLib;
 using MelonLoader;
-[assembly: MelonInfo(typeof(StellarTool.Mod.Entry), "Stellar Tool", "0.1.0", "Stellar")]
+[assembly: MelonInfo(typeof(StellarTool.Mod.Entry), "Stellar Tool", "0.1.1", "Stellar")]
 namespace StellarTool.Mod {
 // Reflection contract is evidenced in both recovered NotesManager/NotesReader assemblies.
 // Built against verified MelonLoader 0.6.4; game-runtime coverage is recorded separately.
@@ -26,9 +25,10 @@ public sealed class Entry : MelonMod {
  static readonly Dictionary<Tuple<Type,string>,MemberInfo> Members=new Dictionary<Tuple<Type,string>,MemberInfo>();
  static readonly Dictionary<Tuple<Type,string,int>,MethodInfo> Methods=new Dictionary<Tuple<Type,string,int>,MethodInfo>();
  static readonly Dictionary<string,Type> Types=new Dictionary<string,Type>();
+ static Assembly gameAssembly;
  static object Get(object o,string n){if(o==null)return null;var t=o as Type??o.GetType();var key=Tuple.Create(t,n);MemberInfo m;if(!Members.TryGetValue(key,out m)){m=(MemberInfo)t.GetField(n,All)??t.GetProperty(n,All);Members[key]=m;}var f=m as FieldInfo;return f!=null?f.GetValue(o is Type?null:o):(m as PropertyInfo)?.GetValue(o is Type?null:o,null);}
  static object Call(object o,string n,params object[] args){if(o==null)return null;var t=o as Type??o.GetType();var key=Tuple.Create(t,n,args.Length);MethodInfo m;if(!Methods.TryGetValue(key,out m)){m=t.GetMethods(All).First(x=>x.Name==n&&x.GetParameters().Length==args.Length);Methods[key]=m;}return m.Invoke(o is Type?null:o,args);}
- static Type TypeOf(string n){Type t;if(Types.TryGetValue(n,out t))return t;t=AppDomain.CurrentDomain.GetAssemblies().Select(a=>a.GetType(n)).FirstOrDefault(x=>x!=null);if(t!=null)Types[n]=t;return t;}
+ static Type TypeOf(string n){Type t;if(Types.TryGetValue(n,out t))return t;t=gameAssembly?.GetType(n);if(t!=null)Types[n]=t;return t;}
  static double Number(object o)=>o==null?0:Convert.ToDouble(o,System.Globalization.CultureInfo.InvariantCulture);
  // Manager.MusicClearrankID.Begin and Rank_D are aliases for zero.
  // Enum.ToString may print Begin depending on runtime. Use stable real ranks.
@@ -40,29 +40,39 @@ public sealed class Entry : MelonMod {
  }
  static double Seconds(object notesTime)=>Number(Get(notesTime,"msec"))/1000;
  void MarkStage(string name){var now=System.Diagnostics.Stopwatch.GetTimestamp();var ms=(now-stageTick)*1000.0/System.Diagnostics.Stopwatch.Frequency;if(ms>slowStageMs){slowStageMs=ms;slowStage=name;}stageTick=now;}
- public override void OnInitializeMelon(){current=this;
-  var game=TypeOf("Manager.NotesManager");if(game==null){LoggerInstance.Error("Assembly-CSharp NotesManager unavailable; disabled");return;}string digest;using(var sha=SHA256.Create())using(var stream=File.OpenRead(game.Assembly.Location))digest=BitConverter.ToString(sha.ComputeHash(stream)).Replace("-","").ToLowerInvariant();if(digest!="c291f0febe70cc24a679683ef07c059c1f856c052e1f6be7a22b55c6b16a94eb"&&digest!="dc0e46a4133d4ee4781ba6deb2fe30063dd3f82ee91c31a5a8a7e61e644d9446"){LoggerInstance.Error("Unverified game assembly "+digest+"; disabled");return;}
+ public override void OnInitializeMelon(){
+  try {
+   gameAssembly=AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a=>a.GetName().Name=="Assembly-CSharp"&&a.GetType("Manager.NotesManager")!=null);
+   Types.Clear();
+   var missing=GameCompatibility.MissingMembers(TypeOf);
+   if(missing.Count!=0){LoggerInstance.Error("Incompatible game API: "+string.Join(", ",missing.ToArray())+"; bridge disabled");return;}
+  } catch(Exception ex) {
+   LoggerInstance.Error("Could not inspect the game API: "+ex.GetBaseException().Message+"; bridge disabled");
+   return;
+  }
+  current=this;
 
   var file=Path.Combine("UserData","StellarTool","bridge.cfg");if(!File.Exists(file)){LoggerInstance.Error("Missing "+file+"; bridge disabled. See README.");return;}
   var cfg=File.ReadAllLines(file).Where(x=>x.Contains("=")).Select(x=>x.Split(new[]{'='},2)).ToDictionary(x=>x[0].Trim(),x=>x[1].Trim());endpoint=cfg["endpoint"];token=cfg["token"];player=cfg.ContainsKey("player")?int.Parse(cfg["player"]):0;if(player<0||player>1)throw new InvalidOperationException("player must be 0 or 1");var uri=new Uri(endpoint);if(!uri.IsLoopback||uri.Scheme!="http")throw new InvalidOperationException("Bridge must use loopback HTTP");
   var h=new HarmonyLib.Harmony("stellar.tool.readonly");
   foreach(var name in new[]{"Process.AdvertiseProcess","Process.EntryProcess","Process.UserDataDLProcess","Process.PlInformationProcess","Process.Information.InformationProcess","Process.ModeSelect.ModeSelectProcess","Process.MusicSelectProcess","Process.GameProcess","Process.ResultProcess"}) {
-   var t=TypeOf(name);if(t==null){LoggerInstance.Warning("Unverified process unavailable: "+name);continue;}
+   var t=TypeOf(name);if(t==null){LoggerInstance.Warning("Game process unavailable: "+name);continue;}
    Patch(h,t,"OnStart",nameof(Start));Patch(h,t,"OnRelease",nameof(Release));
    if(name=="Process.MusicSelectProcess")Patch(h,t,"OnGameStart",nameof(Prepare));
    if(name=="Process.ResultProcess"){
-    var m=t.GetMethod("OnStart",All);
-    if(m!=null&&m.DeclaringType==t)h.Patch(m,prefix:new HarmonyMethod(typeof(Entry).GetMethod(nameof(BeforeResult),All)){priority=HarmonyLib.Priority.First});
+    var m=GameCompatibility.ProcessCallback(t,"OnStart");
+    if(m!=null)h.Patch(m,prefix:new HarmonyMethod(typeof(Entry).GetMethod(nameof(BeforeResult),All)){priority=HarmonyLib.Priority.First});
    }
   }
-  var rateType=TypeOf("Manager.UserDatas.UserRate");rateCtor4=rateType.GetConstructor(new[]{typeof(int),typeof(int),typeof(uint),typeof(uint)});var combo=TypeOf("DB.PlayComboflagID");if(combo!=null)rateCtor5=rateType.GetConstructor(new[]{typeof(int),typeof(int),typeof(uint),typeof(uint),combo});
+  var rateType=TypeOf("Manager.UserDatas.UserRate");rateCtor4=rateType?.GetConstructor(new[]{typeof(int),typeof(int),typeof(uint),typeof(uint)});var combo=TypeOf("DB.PlayComboflagID");if(combo!=null)rateCtor5=rateType?.GetConstructor(new[]{typeof(int),typeof(int),typeof(uint),typeof(uint),combo});
   try {SettlementTelemetry.Start(h,TypeOf,Get);} catch(Exception ex) {LoggerInstance.Warning("Settlement telemetry unavailable: "+ex.GetBaseException().Message);}
   try {ActualJudgeTelemetry.Start(h,TypeOf,player);} catch(Exception ex) {LoggerInstance.Warning("Actual judgement telemetry unavailable: "+ex.GetBaseException().Message);}
   try {CalibratedHitTelemetry.Start(h,TypeOf);} catch(Exception ex) {LoggerInstance.Warning("Calibrated hit timing unavailable: "+ex.GetBaseException().Message);}
-  try {InputTelemetry.Start(game.Assembly,h,endpoint,token);} catch(Exception ex) {LoggerInstance.Warning("Input telemetry unavailable: "+ex.GetBaseException().Message);}
+  try {InputTelemetry.Start(gameAssembly,h,endpoint,token);} catch(Exception ex) {LoggerInstance.Warning("Input telemetry unavailable: "+ex.GetBaseException().Message);}
   running=true;sender=new Thread(SendLoop){IsBackground=true,Name="Stellar HTTP publisher"};sender.Start();
+  LoggerInstance.Msg("Game API compatible; Stellar bridge started");
  }
- static void Patch(HarmonyLib.Harmony h,Type t,string name,string cb){var m=t.GetMethod(name,All);if(m!=null&&m.DeclaringType==t)h.Patch(m,postfix:new HarmonyMethod(typeof(Entry).GetMethod(cb,All)));}
+ static void Patch(HarmonyLib.Harmony h,Type t,string name,string cb){var m=GameCompatibility.ProcessCallback(t,name);if(m!=null)h.Patch(m,postfix:new HarmonyMethod(typeof(Entry).GetMethod(cb,All)));}
  static void Prepare(){preparing=true;if(current!=null){current.next=DateTime.MinValue;current.OnUpdate();}}
  static void Start(object __instance){
   activeProcess=__instance;epoch++;selectProcess=null;

@@ -15,9 +15,11 @@ Host 可独立启动。用 GitHub Release 的 Windows 一键包，或执行 `sh 
 
 素材路径相对于 Host 数据目录。Windows 一键包默认使用解压目录，手动执行 Host 时默认使用当前工作目录。若设置了 `STELLAR_TOOL_HOME`，请将 `web/` 连同 `assets/` 保留在该目录下，再放入需要的本地配置文件。
 
-## 可选曲目封面
+## 曲目封面
 
-自行准备可用的 ZIP。ZIP 内的封面路径是 `assets/jackets/UI_Jacket_000001.png` 这类格式，数字为六位，文件名以游戏报告的曲目封面名为准。可任选一种配置方式：
+Windows 一键包的解压目录自带 `jackets.zip`，Host 会自动读取。ZIP 内的封面路径是 `assets/jackets/UI_Jacket_000001.png` 这类格式，数字为六位，文件名以游戏报告的曲目封面名为准。
+
+源码运行时可将同样结构的 `jackets.zip` 放在 Host 数据目录。若要覆盖默认封面，可任选一种方式。
 
 - 在 Host 数据目录创建 `resource-path.txt`，写入 ZIP 的绝对路径，整行无需引号，例如 `D:\StellarTool\assets.zip`。
 - 在启动 Host 的同一终端设置环境变量 `STELLAR_ASSETS_ZIP`。此变量优先于 `resource-path.txt`。
@@ -35,4 +37,4 @@ $env:STELLAR_ASSETS_ZIP = 'D:\StellarTool\assets.zip'
 
 - 仓库的 `dependencies/sdez170-melon064/` 提供 `MelonLoader.dll`、`0Harmony.dll`、`mscorlib.dll`、`System.dll`、`System.Core.dll` 和 `Assembly-CSharp-firstpass.dll`，供源码构建使用。运行游戏时使用本机安装的兼容游戏及 Loader。安装 Mod 时只把 `StellarTool.Mod.dll` 放入游戏的 `Mods/`。
 - Host 首次启动会创建 `config.json` 和 `bridge-token.txt`。按 [README](../README.md#安装与配置-mod) 在游戏本机填写 `UserData/StellarTool/bridge.cfg`。
-- 封面 ZIP、`resource-path.txt`、token、游戏目录和运行日志均在本地管理。`web/` 会由 Host 提供给浏览器，请将本机配置和原始素材 ZIP 放在 `web/` 之外。
+- `web/` 会由 Host 提供给浏览器。请将封面 ZIP、本机配置、token、游戏目录和运行日志放在 `web/` 之外。

@@ -48,6 +48,11 @@ jobs:
           dotnet publish src/StellarTool.Host -c Release -r win-x64 --self-contained true -p:RuntimeFrameworkVersion=8.0.34 --source https://api.nuget.org/v3/index.json -o $publish
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Copy-Item scripts/Start-StellarTool.cmd $publish
+          $fixture = Join-Path $env:RUNNER_TEMP 'jacket fixture'
+          New-Item -ItemType Directory (Join-Path $fixture 'assets/jackets') -Force | Out-Null
+          $jacket = Join-Path $fixture 'assets/jackets/UI_Jacket_000001.png'
+          Copy-Item web/assets/cad-keys-v1/cropped/KEY_01.png $jacket
+          Compress-Archive -Path (Join-Path $fixture 'assets') -DestinationPath (Join-Path $publish 'jackets.zip')
           $launcher = Start-Process cmd.exe -ArgumentList '/d', '/c', 'Start-StellarTool.cmd' -WorkingDirectory $publish -PassThru -NoNewWindow
           try {
             $health = $null
@@ -62,6 +67,11 @@ jobs:
             Invoke-WebRequest 'http://127.0.0.1:7857/assets/cad-keys-v1/cropped/KEY_01.png' -OutFile $asset
             if ((Get-FileHash $asset).Hash -ne (Get-FileHash web/assets/cad-keys-v1/cropped/KEY_01.png).Hash) {
               throw 'The bundled asset differs from the source'
+            }
+            $servedJacket = Join-Path $env:RUNNER_TEMP 'stellar-jacket-test.png'
+            Invoke-WebRequest 'http://127.0.0.1:7857/assets/jackets/UI_Jacket_000001.png' -OutFile $servedJacket
+            if ((Get-FileHash $servedJacket).Hash -ne (Get-FileHash $jacket).Hash) {
+              throw 'The launcher did not serve the bundled jacket bytes'
             }
             if (-not (Test-Path (Join-Path $publish 'config.json')) -or -not (Test-Path (Join-Path $publish 'bridge-token.txt'))) {
               throw 'The launcher did not initialize local configuration'
